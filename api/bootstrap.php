@@ -66,9 +66,11 @@ function db(): PDO
 function start_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
         session_set_cookie_params([
             'httponly' => true,
             'samesite' => 'Lax',
+            'secure' => $https,
             'path' => '/',
         ]);
         session_start();
@@ -110,6 +112,7 @@ function row_to_item(array $row): array
         'description' => $row['descripcion'],
         'date' => $row['fecha'],
         'image' => $row['imagen'],
+        'visible' => !isset($row['visible']) || (int) $row['visible'] === 1,
         'createdAt' => gmdate('c', strtotime((string) $row['creado_en'])),
         'updatedAt' => gmdate('c', strtotime((string) $row['actualizado_en'])),
     ];
@@ -191,6 +194,9 @@ function resolve_image(string $image): string
     }
     if (str_starts_with($image, '/uploads/')) {
         return existing_image($image);
+    }
+    if (str_starts_with($image, '/images/') && !str_contains($image, '..') && is_file(dirname(__DIR__) . $image)) {
+        return $image;
     }
 
     fail(422, 'Agrega una imagen antes de guardar.');

@@ -1,0 +1,13 @@
+RewriteEngine On
+
+RewriteRule ^api/ - [L]
+RewriteRule ^images/ - [L]
+RewriteRule ^uploads/ - [L]
+
+RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^ dist/index.html [L]

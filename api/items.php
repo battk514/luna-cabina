@@ -7,14 +7,28 @@ require __DIR__ . '/bootstrap.php';
 require_admin();
 
 $method = $_SERVER['REQUEST_METHOD'];
-if (!in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
+if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'], true)) {
     fail(405, 'Método no permitido.');
+}
+
+$pdo = db();
+
+if ($method === 'GET') {
+    $kind = (string) ($_GET['kind'] ?? '');
+    $tipo = tipo_from_kind($kind);
+    try {
+        $statement = $pdo->prepare('SELECT id, tipo, titulo, descripcion, fecha, imagen, visible, creado_en, actualizado_en FROM publicaciones WHERE tipo = ? ORDER BY fecha ASC');
+        $statement->execute([$tipo]);
+    } catch (PDOException) {
+        $statement = $pdo->prepare('SELECT id, tipo, titulo, descripcion, fecha, imagen, creado_en, actualizado_en FROM publicaciones WHERE tipo = ? ORDER BY fecha ASC');
+        $statement->execute([$tipo]);
+    }
+    ok(['items' => array_map('row_to_item', $statement->fetchAll())]);
 }
 
 $body = read_json();
 $kind = (string) ($body['kind'] ?? '');
 $tipo = tipo_from_kind($kind);
-$pdo = db();
 
 if ($method === 'DELETE') {
     $id = trim((string) ($body['id'] ?? ''));
@@ -43,8 +57,14 @@ if ($method === 'POST') {
         $id = bin2hex(random_bytes(16));
     }
     $image = resolve_image((string) ($body['image'] ?? ''));
-    $insert = $pdo->prepare('INSERT INTO publicaciones (id, tipo, titulo, descripcion, fecha, imagen, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    $insert->execute([$id, $tipo, $title, $description, $date, $image, $now, $now]);
+    $visible = visible_flag($body);
+    try {
+        $insert = $pdo->prepare('INSERT INTO publicaciones (id, tipo, titulo, descripcion, fecha, imagen, visible, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $insert->execute([$id, $tipo, $title, $description, $date, $image, $visible, $now, $now]);
+    } catch (PDOException) {
+        $insert = $pdo->prepare('INSERT INTO publicaciones (id, tipo, titulo, descripcion, fecha, imagen, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $insert->execute([$id, $tipo, $title, $description, $date, $image, $now, $now]);
+    }
     ok(['id' => $id], 201);
 }
 
@@ -61,10 +81,25 @@ if (!$row) {
 }
 
 $image = resolve_image((string) ($body['image'] ?? ''));
-$update = $pdo->prepare('UPDATE publicaciones SET titulo = ?, descripcion = ?, fecha = ?, imagen = ?, actualizado_en = ? WHERE id = ? AND tipo = ?');
-$update->execute([$title, $description, $date, $image, $now, $id, $tipo]);
+$visible = visible_flag($body);
+try {
+    $update = $pdo->prepare('UPDATE publicaciones SET titulo = ?, descripcion = ?, fecha = ?, imagen = ?, visible = ?, actualizado_en = ? WHERE id = ? AND tipo = ?');
+    $update->execute([$title, $description, $date, $image, $visible, $now, $id, $tipo]);
+} catch (PDOException) {
+    $update = $pdo->prepare('UPDATE publicaciones SET titulo = ?, descripcion = ?, fecha = ?, imagen = ?, actualizado_en = ? WHERE id = ? AND tipo = ?');
+    $update->execute([$title, $description, $date, $image, $now, $id, $tipo]);
+}
 if ($image !== $row['imagen']) {
     delete_image((string) $row['imagen']);
 }
 
 ok(['id' => $id]);
+
+function visible_flag(array $body): int
+{
+    if (!array_key_exists('visible', $body)) {
+        return 1;
+    }
+
+    return empty($body['visible']) ? 0 : 1;
+}

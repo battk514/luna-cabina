@@ -2,3 +2,4 @@
 uploads/*
 !uploads/.gitkeep
 !uploads/index.html
+dist

@@ -1,19 +1,31 @@
 # Luna Cabina
 
-Sitio de Luna, cabina de depilación y masajes.
-
-Para verlo en local hace falta PHP, porque las promociones y ocasiones se leen desde MySQL:
-
-```bash
-php -S 127.0.0.1:5500
-```
-
-Luego abre http://127.0.0.1:5500/
+Sitio de Luna, cabina de depilación y masajes. La interfaz está en React, Vite y Mantine. El ERP y el CRM viven en PHP y MySQL, para consultarlos también desde phpMyAdmin.
 
 ## Base de datos
 
-1. Abre phpMyAdmin.
-2. Importa `sql/luna_cabina.sql`.
-3. Si tu MySQL no usa `root` sin contraseña, ajusta `api/config.php`.
+En phpMyAdmin importa `sql/luna_cabina.sql` si la base es nueva. Si ya tenías la versión anterior, importa `sql/erp_crm.sql`.
 
-El panel de administración queda en `HTML/Administracion.html`. El usuario inicial es `luna` y la contraseña es `luna`. Las publicaciones viven en la tabla `publicaciones` de la base `luna_cabina`.
+`api/config.php` usa `root` sin contraseña en `127.0.0.1`. Cámbialo si tu MySQL es distinto.
+
+El panel entra con usuario `luna` y contraseña `luna`.
+
+## Desarrollo
+
+La API sigue en el puerto 5500 y la interfaz en el 5173:
+
+```bash
+php -S 127.0.0.1:5500
+cd frontend && npm install && npm run dev
+```
+
+Abre http://127.0.0.1:5173/
+
+## Servidor
+
+```bash
+cd frontend && npm install && npm run build
+php -S 127.0.0.1:5500 router.php
+```
+
+En Apache, el `.htaccess` sirve la aplicación construida y deja `/api`, `/images` y `/uploads` en PHP.
