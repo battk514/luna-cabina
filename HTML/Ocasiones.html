@@ -75,7 +75,6 @@
         (() => {
             const container = document.getElementById('occasionsContainer');
             const empty = document.getElementById('occasionsEmpty');
-            const key = 'luna-cabina.admin.v1';
             const localDate = new Date();
             localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
             const today = localDate.toISOString().slice(0, 10);
@@ -84,8 +83,7 @@
                 return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)));
             };
 
-            try {
-                const data = JSON.parse(localStorage.getItem(key) || '{}');
+            const renderOccasions = (data) => {
                 const occasions = Array.isArray(data.occasions) ? data.occasions.filter((item) => item && item.date >= today && item.title && item.image) : [];
                 occasions.sort((a, b) => a.date.localeCompare(b.date)).forEach((occasion) => {
                     const card = document.createElement('article');
@@ -109,9 +107,11 @@
                     container.append(card);
                 });
                 empty.hidden = occasions.length > 0;
-            } catch (error) {
-                empty.textContent = 'No pudimos cargar las ocasiones en este navegador.';
-            }
+            };
+
+            fetch('/api/content.php').then((response) => response.ok ? response.json() : Promise.reject()).then(renderOccasions).catch(() => {
+                empty.textContent = 'No pudimos cargar las ocasiones.';
+            });
         })();
     </script>
 </body>

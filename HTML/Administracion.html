@@ -9,7 +9,19 @@
     <script src="../js/admin.js" defer></script>
 </head>
 <body>
-    <div class="app-shell">
+    <div class="login-screen" id="login-screen">
+        <form class="login-card" id="login-form">
+            <p class="eyebrow">LUNA CABINA</p>
+            <h1>Administración</h1>
+            <p>Entra para editar promociones y ocasiones. Los cambios se guardan en MySQL.</p>
+            <label class="field-label" for="login-user">Usuario<input id="login-user" name="usuario" type="text" autocomplete="username" required></label>
+            <label class="field-label" for="login-password">Contraseña<input id="login-password" name="clave" type="password" autocomplete="current-password" required></label>
+            <p class="form-error" id="login-error" role="alert" hidden></p>
+            <button class="button button-primary" type="submit">Entrar</button>
+        </form>
+    </div>
+
+    <div class="app-shell" id="app-shell" hidden>
         <aside class="sidebar" aria-label="Navegación de administración">
             <a class="brand" href="../index.html" aria-label="Luna Cabina, ir al sitio">
                 <span class="brand-mark" aria-hidden="true">L</span>
@@ -24,7 +36,7 @@
             </nav>
 
             <div class="sidebar-bottom">
-                <div class="local-note"><span class="status-dot" aria-hidden="true"></span><span>Datos guardados en este navegador</span></div>
+                <div class="local-note"><span class="status-dot" aria-hidden="true"></span><span>Datos guardados en MySQL. También puedes verlos en phpMyAdmin.</span></div>
                 <a class="site-link" href="../index.html">← Volver al sitio</a>
             </div>
         </aside>
@@ -39,6 +51,7 @@
                     <button class="button button-quiet" id="import-button" type="button">Importar respaldo</button>
                     <input id="import-file" type="file" accept="application/json,.json" hidden>
                     <button class="button button-quiet" id="export-button" type="button">Exportar datos</button>
+                    <button class="button button-quiet" id="logout-button" type="button">Salir</button>
                 </div>
             </header>
 
@@ -59,7 +72,7 @@
                     <div class="table-scroll"><table><thead><tr><th>Publicación</th><th>Tipo</th><th>Vigencia</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody id="recent-list"></tbody></table></div>
                     <div class="empty-state" id="dashboard-empty" hidden><span aria-hidden="true">✧</span><h3>Tu espacio está listo</h3><p>Agrega una promoción o una ocasión especial para comenzar.</p><button class="button button-primary button-small" type="button" data-create="promotions">Crear primera promoción</button></div>
                 </section>
-                <p class="storage-hint">Este panel guarda los datos en el almacenamiento local de este navegador. Exporta un respaldo antes de cambiar de dispositivo o borrar los datos del navegador.</p>
+                <p class="storage-hint">Las publicaciones se guardan en la base luna_cabina, tabla publicaciones. Puedes consultarlas o editarlas en phpMyAdmin.</p>
             </section>
 
             <section class="view" id="view-promotions" aria-labelledby="promotions-title" hidden>

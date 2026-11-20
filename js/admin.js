@@ -1,7 +1,6 @@
 (() => {
     'use strict';
 
-    const STORAGE_KEY = 'luna-cabina.admin.v1';
     const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
     const TARGET_IMAGE_BYTES = 550 * 1024;
     const $ = (selector) => document.querySelector(selector);
@@ -12,30 +11,34 @@
         return date.toISOString().slice(0, 10);
     };
 
-    let store = loadStore();
+    let store = { promotions: [], occasions: [] };
     let selectedImage = '';
     let toastTimer;
 
-    function loadStore() {
-        try {
-            const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            return {
-                promotions: Array.isArray(value.promotions) ? value.promotions : [],
-                occasions: Array.isArray(value.occasions) ? value.occasions : []
-            };
-        } catch (error) {
-            return { promotions: [], occasions: [] };
+    async function api(path, options = {}) {
+        const response = await fetch(path, {
+            credentials: 'same-origin',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const error = new Error(data.error || 'No se pudo completar la operación.');
+            error.status = response.status;
+            throw error;
         }
+        return data;
     }
 
-    function saveStore() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-            return true;
-        } catch (error) {
-            showToast('No se pudieron guardar los datos. Exporta un respaldo y reduce el tamaño o la cantidad de imágenes.', true);
-            return false;
-        }
+    async function refreshStore() {
+        const data = await api('/api/content.php');
+        store = {
+            promotions: Array.isArray(data.promotions) ? data.promotions : [],
+            occasions: Array.isArray(data.occasions) ? data.occasions : []
+        };
     }
 
     function showToast(message, isError = false) {
@@ -262,25 +265,18 @@
 
         try {
             if (!selectedImage) throw new Error('Agrega una imagen antes de guardar.');
-            const previous = JSON.parse(JSON.stringify(store));
-            const item = {
-                id: existing ? existing.id : (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
-                title: $('#item-title').value.trim(),
-                description: $('#item-description').value.trim(),
-                date: $('#item-date').value,
-                image: selectedImage,
-                createdAt: existing ? existing.createdAt : new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            if (existing) {
-                store[kind] = store[kind].map((entry) => entry.id === existing.id ? item : entry);
-            } else {
-                store[kind].push(item);
-            }
-            if (!saveStore()) {
-                store = previous;
-                return;
-            }
+            await api('/api/items.php', {
+                method: existing ? 'PUT' : 'POST',
+                body: JSON.stringify({
+                    kind,
+                    id: existing ? existing.id : '',
+                    title: $('#item-title').value.trim(),
+                    description: $('#item-description').value.trim(),
+                    date: $('#item-date').value,
+                    image: selectedImage
+                })
+            });
+            await refreshStore();
             closeEditor();
             render();
             showToast(existing ? 'Los cambios quedaron guardados.' : 'La publicación se agregó correctamente.');
@@ -308,12 +304,14 @@
         if (!result) return;
         if (button.dataset.action === 'edit') return openEditor(result.kind, result.item);
         if (button.dataset.action === 'delete' && window.confirm(`¿Eliminar “${result.item.title}”? Esta acción no se puede deshacer.`)) {
-            const previous = JSON.parse(JSON.stringify(store));
-            store[result.kind] = store[result.kind].filter((item) => item.id !== result.item.id);
-            if (saveStore()) {
+            api('/api/items.php', {
+                method: 'DELETE',
+                body: JSON.stringify({ kind: result.kind, id: result.item.id })
+            }).then(async () => {
+                await refreshStore();
                 render();
                 showToast('La publicación se eliminó.');
-            } else store = previous;
+            }).catch((error) => showToast(error.message || 'No se pudo eliminar la publicación.', true));
         }
     }
 
@@ -335,20 +333,38 @@
             if (!Array.isArray(backup.promotions) || !Array.isArray(backup.occasions)) throw new Error('El archivo no tiene el formato de respaldo de Luna Cabina.');
             const validItem = (item) => item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.description === 'string' && typeof item.date === 'string' && typeof item.image === 'string';
             if (![...backup.promotions, ...backup.occasions].every(validItem)) throw new Error('El archivo contiene publicaciones incompletas.');
-            if (!window.confirm('Importar este respaldo reemplazará las publicaciones guardadas actualmente en este navegador. ¿Continuar?')) return;
-            const previous = store;
-            store = { promotions: backup.promotions, occasions: backup.occasions };
-            if (saveStore()) {
-                render();
-                showToast('El respaldo se importó correctamente.');
-            } else {
-                store = previous;
-            }
+            if (!window.confirm('Importar este respaldo reemplazará las publicaciones guardadas en MySQL. ¿Continuar?')) return;
+            await api('/api/import.php', {
+                method: 'POST',
+                body: JSON.stringify({ promotions: backup.promotions, occasions: backup.occasions })
+            });
+            await refreshStore();
+            render();
+            showToast('El respaldo se importó correctamente.');
         } catch (error) {
             showToast(error.message || 'No se pudo importar el respaldo.', true);
         } finally {
             $('#import-file').value = '';
         }
+    }
+
+    function showLogin(message = '') {
+        $('#app-shell').hidden = true;
+        $('#login-screen').hidden = false;
+        const error = $('#login-error');
+        error.textContent = message;
+        error.hidden = message === '';
+    }
+
+    async function enterApp() {
+        $('#login-error').hidden = true;
+        $('#login-screen').hidden = true;
+        $('#app-shell').hidden = false;
+        await refreshStore();
+        const requested = new URLSearchParams(location.search).get('section');
+        const initialView = ['dashboard', 'promotions', 'occasions'].includes(requested) ? requested : 'dashboard';
+        showView(initialView);
+        render();
     }
 
     function initialize() {
@@ -385,10 +401,38 @@
         $('#export-button').addEventListener('click', exportData);
         $('#import-button').addEventListener('click', () => $('#import-file').click());
         $('#import-file').addEventListener('change', (event) => importData(event.target.files[0]));
-        const requested = new URLSearchParams(location.search).get('section');
-        const initialView = ['dashboard', 'promotions', 'occasions'].includes(requested) ? requested : 'dashboard';
-        showView(initialView);
-        render();
+        $('#login-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submit = event.submitter || $('#login-form').querySelector('button[type="submit"]');
+            submit.disabled = true;
+            try {
+                await api('/api/auth.php', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        usuario: $('#login-user').value.trim(),
+                        clave: $('#login-password').value
+                    })
+                });
+                $('#login-password').value = '';
+                await enterApp();
+            } catch (error) {
+                showLogin(error.message || 'No se pudo iniciar sesión.');
+            } finally {
+                submit.disabled = false;
+            }
+        });
+        $('#logout-button').addEventListener('click', async () => {
+            try {
+                await api('/api/auth.php', { method: 'DELETE' });
+            } catch (error) {
+                showToast(error.message || 'No se pudo cerrar la sesión.', true);
+            }
+            store = { promotions: [], occasions: [] };
+            showLogin();
+        });
+        api('/api/auth.php').then(enterApp).catch((error) => {
+            showLogin(error.status === 401 ? '' : error.message);
+        });
     }
 
     initialize();

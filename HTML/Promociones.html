@@ -152,7 +152,6 @@
         (() => {
             const section = document.getElementById('managed-promotions');
             const container = document.getElementById('promotionsContainer');
-            const key = 'luna-cabina.admin.v1';
             const localDate = new Date();
             localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
             const today = localDate.toISOString().slice(0, 10);
@@ -161,8 +160,7 @@
                 return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month - 1, day)));
             };
 
-            try {
-                const data = JSON.parse(localStorage.getItem(key) || '{}');
+            const renderPromotions = (data) => {
                 const promotions = Array.isArray(data.promotions) ? data.promotions.filter((item) => item && item.date >= today && item.title && item.image) : [];
                 if (!promotions.length) return;
                 promotions.sort((a, b) => a.date.localeCompare(b.date)).forEach((promotion) => {
@@ -186,9 +184,9 @@
                     container.append(card);
                 });
                 section.hidden = false;
-            } catch (error) {
-                // Si el navegador no permite leer el almacenamiento, las ofertas fijas siguen disponibles.
-            }
+            };
+
+            fetch('/api/content.php').then((response) => response.ok ? response.json() : Promise.reject()).then(renderPromotions).catch(() => {});
         })();
     </script>
 </body>
