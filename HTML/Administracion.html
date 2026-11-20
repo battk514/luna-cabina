@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f2f0">
+    <title>Administración | Luna Cabina</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <script src="../js/admin.js" defer></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Navegación de administración">
+            <a class="brand" href="../index.html" aria-label="Luna Cabina, ir al sitio">
+                <span class="brand-mark" aria-hidden="true">L</span>
+                <span><strong>Luna</strong><small>Cabina de cuidado</small></span>
+            </a>
+
+            <p class="nav-label">ADMINISTRACIÓN</p>
+            <nav class="side-nav">
+                <button class="nav-link is-active" type="button" data-view="dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Resumen</button>
+                <button class="nav-link" type="button" data-view="promotions"><span class="nav-icon" aria-hidden="true">✦</span>Promociones</button>
+                <button class="nav-link" type="button" data-view="occasions"><span class="nav-icon" aria-hidden="true">♡</span>Ocasiones especiales</button>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="local-note"><span class="status-dot" aria-hidden="true"></span><span>Datos guardados en este navegador</span></div>
+                <a class="site-link" href="../index.html">← Volver al sitio</a>
+            </div>
+        </aside>
+
+        <main class="main-area" id="main-content">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">LUNA CABINA</p>
+                    <p class="topbar-caption">Espacio de administración</p>
+                </div>
+                <div class="topbar-actions">
+                    <button class="button button-quiet" id="import-button" type="button">Importar respaldo</button>
+                    <input id="import-file" type="file" accept="application/json,.json" hidden>
+                    <button class="button button-quiet" id="export-button" type="button">Exportar datos</button>
+                </div>
+            </header>
+
+            <section class="view is-visible" id="view-dashboard" aria-labelledby="dashboard-title">
+                <div class="page-heading">
+                    <div><p class="eyebrow">TU ESPACIO</p><h1 id="dashboard-title">Resumen</h1><p class="page-intro">Administra lo que compartes con tus clientas.</p></div>
+                    <button class="button button-primary" type="button" data-create="promotions"><span aria-hidden="true">＋</span> Nueva promoción</button>
+                </div>
+
+                <div class="stats-grid" aria-label="Resumen de publicaciones">
+                    <article class="stat-card"><span class="stat-icon rose" aria-hidden="true">✦</span><div><p>Promociones activas</p><strong id="stat-promotions">0</strong></div></article>
+                    <article class="stat-card"><span class="stat-icon sage" aria-hidden="true">♡</span><div><p>Próximas ocasiones</p><strong id="stat-occasions">0</strong></div></article>
+                    <article class="stat-card"><span class="stat-icon sand" aria-hidden="true">▤</span><div><p>Total de publicaciones</p><strong id="stat-total">0</strong></div></article>
+                </div>
+
+                <section class="panel" aria-labelledby="recent-title">
+                    <div class="panel-heading"><div><h2 id="recent-title">Contenido reciente</h2><p>Las promociones y ocasiones que has agregado.</p></div><button class="text-button" type="button" data-view="promotions">Ver promociones <span aria-hidden="true">→</span></button></div>
+                    <div class="table-scroll"><table><thead><tr><th>Publicación</th><th>Tipo</th><th>Vigencia</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody id="recent-list"></tbody></table></div>
+                    <div class="empty-state" id="dashboard-empty" hidden><span aria-hidden="true">✧</span><h3>Tu espacio está listo</h3><p>Agrega una promoción o una ocasión especial para comenzar.</p><button class="button button-primary button-small" type="button" data-create="promotions">Crear primera promoción</button></div>
+                </section>
+                <p class="storage-hint">Este panel guarda los datos en el almacenamiento local de este navegador. Exporta un respaldo antes de cambiar de dispositivo o borrar los datos del navegador.</p>
+            </section>
+
+            <section class="view" id="view-promotions" aria-labelledby="promotions-title" hidden>
+                <div class="page-heading">
+                    <div><p class="eyebrow">CONTENIDO</p><h1 id="promotions-title">Promociones</h1><p class="page-intro">Crea y actualiza las ofertas de Luna Cabina.</p></div>
+                    <button class="button button-primary" type="button" data-create="promotions"><span aria-hidden="true">＋</span> Nueva promoción</button>
+                </div>
+                <div class="toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Buscar promociones</span><input id="promotion-search" type="search" placeholder="Buscar por título o descripción"></label><label class="filter-select"><span class="sr-only">Filtrar promociones</span><select id="promotion-filter"><option value="all">Todas las promociones</option><option value="active">Vigentes</option><option value="expired">Vencidas</option></select></label></div>
+                <section class="panel list-panel" aria-label="Lista de promociones"><div class="table-scroll"><table><thead><tr><th>Promoción</th><th>Fecha límite</th><th>Estado</th><th class="actions-heading">Acciones</th></tr></thead><tbody id="promotion-list"></tbody></table></div><div class="empty-state" id="promotion-empty" hidden><span aria-hidden="true">✦</span><h3>Aún no hay promociones</h3><p>Cuando agregues una, podrás verla y editarla desde aquí.</p><button class="button button-primary button-small" type="button" data-create="promotions">Agregar promoción</button></div><p class="no-results" id="promotion-no-results" hidden>No hay promociones que coincidan con tu búsqueda.</p></section>
+            </section>
+
+            <section class="view" id="view-occasions" aria-labelledby="occasions-title" hidden>
+                <div class="page-heading">
+                    <div><p class="eyebrow">CONTENIDO</p><h1 id="occasions-title">Ocasiones especiales</h1><p class="page-intro">Comparte fechas y momentos importantes con tus clientas.</p></div>
+                    <button class="button button-primary" type="button" data-create="occasions"><span aria-hidden="true">＋</span> Nueva ocasión</button>
+                </div>
+                <div class="toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Buscar ocasiones</span><input id="occasion-search" type="search" placeholder="Buscar por título o descripción"></label><label class="filter-select"><span class="sr-only">Filtrar ocasiones</span><select id="occasion-filter"><option value="all">Todas las ocasiones</option><option value="upcoming">Próximas</option><option value="past">Anteriores</option></select></label></div>
+                <section class="panel list-panel" aria-label="Lista de ocasiones especiales"><div class="table-scroll"><table><thead><tr><th>Ocasión</th><th>Fecha</th><th>Estado</th><th class="actions-heading">Acciones</th></tr></thead><tbody id="occasion-list"></tbody></table></div><div class="empty-state" id="occasion-empty" hidden><span aria-hidden="true">♡</span><h3>Aún no hay ocasiones</h3><p>Agrega una fecha especial para comenzar.</p><button class="button button-primary button-small" type="button" data-create="occasions">Agregar ocasión</button></div><p class="no-results" id="occasion-no-results" hidden>No hay ocasiones que coincidan con tu búsqueda.</p></section>
+            </section>
+
+            <footer class="app-footer"><span>© <span id="current-year"></span> Luna Cabina</span><span>Un espacio para sentirte bien</span></footer>
+        </main>
+    </div>
+
+    <dialog class="editor-dialog" id="item-dialog" aria-labelledby="dialog-title">
+        <form class="editor-form" id="item-form">
+            <div class="dialog-heading"><div><p class="eyebrow" id="dialog-eyebrow">NUEVA PUBLICACIÓN</p><h2 id="dialog-title">Nueva promoción</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Cerrar">×</button></div>
+            <input id="item-kind" name="kind" type="hidden">
+            <input id="item-id" name="id" type="hidden">
+            <label class="field-label" for="item-title">Título <span aria-hidden="true">*</span><input id="item-title" name="title" type="text" maxlength="80" required placeholder="Ej. Ritual de bienestar"></label>
+            <label class="field-label" for="item-description">Descripción <span aria-hidden="true">*</span><textarea id="item-description" name="description" rows="4" maxlength="500" required placeholder="Cuéntales qué incluye y cómo aprovecharlo."></textarea><small class="field-help">Hasta 500 caracteres.</small></label>
+            <label class="field-label" for="item-date"><span id="date-label">Válida hasta</span> <span aria-hidden="true">*</span><input id="item-date" name="date" type="date" required></label>
+            <div class="field-label">Imagen <span aria-hidden="true">*</span><label class="upload-box" for="item-image"><span class="upload-icon" aria-hidden="true">＋</span><span><strong id="upload-title">Elige una imagen</strong><small>JPG, PNG o WebP. Se optimiza para el panel.</small></span><input id="item-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><img class="image-preview" id="image-preview" alt="Vista previa de la imagen" hidden><small class="field-help" id="image-help">Necesitas agregar una imagen.</small></div>
+            <p class="form-error" id="form-error" role="alert" hidden></p>
+            <div class="dialog-actions"><button class="button button-quiet" id="cancel-dialog" type="button">Cancelar</button><button class="button button-primary" id="save-button" type="submit">Guardar publicación</button></div>
+        </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
